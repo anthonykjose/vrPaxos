@@ -1,0 +1,77 @@
+
+A0: for all b, b , s, c, c , if pvalue b, s, c and pvalue
+b , s, c are both accepted by a majority of ac-
+ceptors, then c = c .
+
+	DONE 
+
+A1: an acceptor can only adopt strictly increasing
+ballot numbers;
+
+	(* assert m.bal > ballot_num[self]; *) 
+
+
+A2: an acceptor α can only add b, s, c to α.accepted
+(i.e., accept b, s, c ) if b = ballot num;
+
+	(* assert m.bal = ballot_num[self]; *) 
+
+A4: Suppose α and α are acceptors, with b, s, c ∈
+α.accepted and b, s, c ∈ α .accepted. Then
+c = c . Informally, given a particular ballot num-
+ber and slot number, there can be at most one
+proposed command under consideration by the
+set of acceptors.
+
+This boils down to ensuring that for all possible pairs of acceptors α & α', 
+	- For all elements in accepted[α] <<b,s,p>>, there must not exist a <<b,s,p'>> such that p # p'.
+
+This is represented in TLA+ as: 
+
+A4 == \A a1 \in Acceptor : \A a2 \in Acceptor : \A acc1 \in accepted[a1] : ~ \E acc2 \in accepted[a2] : /\ acc1[1] = acc2[1] 
+																									   /\ acc1[2] = acc2[2]
+																									   /\ acc1[3] # acc2[3];
+
+
+A5: Suppose that for each α among a majority of
+acceptors, b, s, c ∈ α.accepted. If b' > b and
+b , s, c ∈ α' .accepted, then c = c.
+
+DONE.
+
+-------------------------------------------------
+
+R1: Two different commands are never decided for
+the same slot: ∀s, ρ1 , ρ2 , c1 , c2 : s, c1 ∈
+ρ1 .decisions ∧ s, c2 ∈ ρ2 .decisions ⇒ c1 = c2.
+
+:: In our improved replica, each replica does not store the set of decisions it makes. However, when a replica makes a decision, it performs the operation on the state and sends the result of the operation to the client. In my specification, when a replica makes a decision for a slot, it pushes a <<slot, command>> tuple into a global 'chosen' set. So this invariant thus reduces to checking if: 
+	- For a given s, there MUST NOT BE 2 tuples - <<s,p1>> & <<s,p2>>, in 'chosen' such that p1 != p2. This can be expressed in TLA+ as:
+
+	R1 == ~ \E t1 \in chosen : \E t2 \in chosen : t1[1] = t2[1] /\ t1[2] # t2[2] 
+
+R2: All commands up to slot_num are in the set of decisions: 
+∀ρ, s : 1 ≤ s < ρ.slot num ⇒ (∃c : s, c ∈ ρ.decisions)
+
+:: R2 == \A r \in Replica : \A s \in 1..slot_num[r] : \E dec \in chosen : dec[1] = s ;
+
+R3: For all replicas p, p.state is the result of applying 
+the operations in <s,cs> ∈ p.decisions for all s such that
+1 <= s < slot_num to initial_state, in order of slot number;
+
+NOT APPLICABLE.
+
+R4: For each ρ, the variable ρ.slot_num cannot de-
+crease over time.
+
+
+
+L1 : For any b and s, at most one commander is
+spawned;
+NOT APPLICABLE
+Since in our specification, we make use of a Merged Leader/Scout/Commander, the above invariant is irrelevant to our specification.
+
+L2: Suppose that for each α among a majority of
+acceptors b, s, c ∈ α.accepted. If b' > b and a
+commander is spawned for b , s, c , then c = c .
+
